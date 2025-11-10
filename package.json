@@ -1,0 +1,36 @@
+{
+  "name": "cloud-pos-web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom --watchAll=false",
+    "eject": "react-scripts eject",
+    "lint": "eslint 'src/**' --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "axios": "^1.4.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.12.1",
+    "@reduxjs/toolkit": "^1.9.5",
+    "react-redux": "^8.1.1",
+    "@tanstack/react-query": "^4.30.0",
+    "react-hook-form": "^7.45.1",
+    "yup": "^1.2.0",
+    "dayjs": "^1.11.9"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.0.0",
+    "@testing-library/react": "^14.0.0",
+    "@types/jest": "^29.5.3",
+    "@types/node": "^20.4.2",
+    "@types/react": "^18.2.21",
+    "@types/react-dom": "^18.2.7",
+    "typescript": "^5.6.4",
+    "react-scripts": "5.0.1",
+    "eslint": "^8.48.0",
+    "prettier": "^2.8.8"
+  }
+}
