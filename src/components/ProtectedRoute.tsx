@@ -1,10 +1,12 @@
 import React from 'react'
 import { Navigate } from 'react-router-dom'
-
-const isAuthenticated = () => !!localStorage.getItem('token')
+import { useSelector } from 'react-redux'
+import type { RootState } from '../store'
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  if (!isAuthenticated()) return <Navigate to="/login" replace />
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated)
+
+  if (!isAuthenticated) return <Navigate to="/login" replace />
   return <>{children}</>
 }
 
