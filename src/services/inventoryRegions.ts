@@ -2,7 +2,7 @@ import http from './httpClient'
 import type { paths } from '../api-types/openapi'
 
 type InventoryRegionCreate = paths['/api/v1/inventory-regions']['post']['requestBody']['content']['application/json']
-type InventoryRegionUpdate = paths['/api/v1/inventory-regions/{id}']['put']['requestBody'] extends { content: any } ? paths['/api/v1/inventory-regions/{id}']['put']['requestBody']['content']['application/json'] : any
+type InventoryRegionUpdate = Partial<InventoryRegionCreate>
 type AddStoresToRegion = paths['/api/v1/inventory-regions/{id}/stores']['post']['requestBody']['content']['application/json']
 type RemoveStoresFromRegion = paths['/api/v1/inventory-regions/{id}/stores']['delete']['requestBody']['content']['application/json']
 

@@ -2,8 +2,8 @@ import http from './httpClient'
 import type { paths } from '../api-types/openapi'
 
 type BulkTransferCreate = paths['/api/v1/bulk-transfers']['post']['requestBody']['content']['application/json']
-type BulkTransferApprove = paths['/api/v1/bulk-transfers/{id}/approve']['post']['requestBody'] extends { content: any } ? paths['/api/v1/bulk-transfers/{id}/approve']['post']['requestBody']['content']['application/json'] : { notes?: string }
-type BulkTransferCancel = paths['/api/v1/bulk-transfers/{id}/cancel']['post']['requestBody'] extends { content: any } ? paths['/api/v1/bulk-transfers/{id}/cancel']['post']['requestBody']['content']['application/json'] : { reason?: string }
+type BulkTransferApprove = { notes?: string }
+type BulkTransferCancel = { reason?: string }
 
 export interface BulkTransfer {
   id: string
