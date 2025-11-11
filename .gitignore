@@ -24,6 +24,10 @@
 .DS_Store
 *.pem
 
+# reference folders
+/public/Design_Ref
+/public/Resubable_Components_Ref
+
 # debug
 npm-debug.log*
 yarn-debug.log*

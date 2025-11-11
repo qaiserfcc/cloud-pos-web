@@ -1,5 +1,15 @@
 # Cloud POS API – AI Agents Guidelines
 
+Strictly follow below rules for AI code generation and architecture.
+---Our frontend design should be dito copied from /public/Design_Ref folder code.
+    - Same Landing page but with our project related information , menu other data
+    - Vertical movement - no horizontal - same as sample design
+    - Should Support light and dark both themes
+-- Our frontend will pages will used tailwind css framework for styling and components
+    - will create reusable components where ever possible and max
+    - always check /public/Resubable_Components_Ref folder code before creating any new component that it is not already available.
+    Components and Page design color should be look good and nice gradient.
+ 
 ## 1. Project Overview
 
 The Cloud POS API is a modular, multi-tenant Point-of-Sale backend built on Node.js, Express, and PostgreSQL, with offline synchronization support using SQLite. Its core purpose is to manage tenants, stores, users, roles, permissions, inventory, sales, payments, and reporting.
