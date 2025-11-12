@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowRight, Store, Users, BarChart3, Shield, Zap, Smartphone } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export default function Home() {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -15,7 +16,8 @@ export default function Home() {
   const touchStartY = useRef(0)
   const touchStartX = useRef(0)
   const shaderContainerRef = useRef<HTMLDivElement>(null)
-  const scrollThrottleRef = useRef<number | undefined>()
+  const scrollThrottleRef = useRef<number | undefined>(undefined)
+  const router = useRouter()
 
   useEffect(() => {
     const checkShaderReady = () => {
@@ -176,7 +178,6 @@ export default function Home() {
       <div
         ref={shaderContainerRef}
         className={`fixed inset-0 z-0 transition-opacity duration-700 ${isLoaded ? "opacity-100" : "opacity-0"}`}
-        style={{ contain: "strict" }}
       >
         <Shader className="h-full w-full">
           <Swirl
@@ -242,6 +243,9 @@ export default function Home() {
 
         <div className="flex items-center gap-4">
           <ThemeToggle />
+          <Button variant="outline" onClick={() => router.push('/login')}>
+            Login
+          </Button>
           <Button onClick={() => scrollToSection(4)}>
             Get Started
             <ArrowRight className="ml-2 h-4 w-4" />

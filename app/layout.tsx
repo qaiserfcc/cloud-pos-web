@@ -1,17 +1,12 @@
 import type React from "react"
-import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/toaster"
+import { ErrorBoundary } from "@/components/error-boundary"
 import "./globals.css"
 
 const geist = Geist({ subsets: ["latin"] })
 const geistMono = Geist_Mono({ subsets: ["latin"] })
-
-export const metadata: Metadata = {
-  title: "Cloud POS - Modern Point of Sale System",
-  description: "Multi-tenant Point of Sale system with real-time synchronization, inventory management, and comprehensive reporting.",
-  generator: "Next.js",
-}
 
 export default function RootLayout({
   children,
@@ -27,7 +22,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>
