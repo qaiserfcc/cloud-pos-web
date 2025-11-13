@@ -1,16 +1,28 @@
 "use client"
 
 import { Shader, ChromaFlow, Swirl } from "shaders/react"
-import { CustomCursor } from "@/components/custom-cursor"
 import { GrainOverlay } from "@/components/grain-overlay"
-import { WorkSection } from "@/components/sections/work-section"
-import { ServicesSection } from "@/components/sections/services-section"
-import { AboutSection } from "@/components/sections/about-section"
-import { ContactSection } from "@/components/sections/contact-section"
 import { MagneticButton } from "@/components/magnetic-button"
 import { useRef, useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { 
+  Store, 
+  ShoppingCart, 
+  Users, 
+  BarChart3, 
+  Cloud, 
+  Shield, 
+  Zap,
+  Package,
+  CreditCard,
+  TrendingUp,
+  Lock,
+  CheckCircle2,
+  ArrowRight
+} from "lucide-react"
 
 export default function Home() {
+  const router = useRouter()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [currentSection, setCurrentSection] = useState(0)
   const [isLoaded, setIsLoaded] = useState(false)
@@ -79,7 +91,7 @@ export default function Home() {
       const deltaX = touchStartX.current - touchEndX
 
       if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 50) {
-        if (deltaY > 0 && currentSection < 4) {
+        if (deltaY > 0 && currentSection < 5) {
           scrollToSection(currentSection + 1)
         } else if (deltaY < 0 && currentSection > 0) {
           scrollToSection(currentSection - 1)
@@ -149,7 +161,7 @@ export default function Home() {
         const scrollLeft = scrollContainerRef.current.scrollLeft
         const newSection = Math.round(scrollLeft / sectionWidth)
 
-        if (newSection !== currentSection && newSection >= 0 && newSection <= 4) {
+        if (newSection !== currentSection && newSection >= 0 && newSection <= 5) {
           setCurrentSection(newSection)
         }
 
@@ -172,9 +184,52 @@ export default function Home() {
     }
   }, [currentSection])
 
+  const features = [
+    {
+      icon: <Store className="h-8 w-8" />,
+      title: "Multi-Tenant Architecture",
+      description: "Hierarchical tenant → store structure with role-based access control"
+    },
+    {
+      icon: <ShoppingCart className="h-8 w-8" />,
+      title: "Complete POS System",
+      description: "Sales, payments, returns, and real-time inventory management"
+    },
+    {
+      icon: <Cloud className="h-8 w-8" />,
+      title: "Cloud & Offline Sync",
+      description: "Work offline with desktop SQLite, sync when connected"
+    },
+    {
+      icon: <Shield className="h-8 w-8" />,
+      title: "Dynamic RBAC",
+      description: "Flexible roles and permissions with superadmin override"
+    },
+    {
+      icon: <BarChart3 className="h-8 w-8" />,
+      title: "Advanced Analytics",
+      description: "Sales, inventory, CRM reports with dynamic dashboards"
+    },
+    {
+      icon: <Lock className="h-8 w-8" />,
+      title: "Audit Logging",
+      description: "Complete audit trail with change queue for sync"
+    }
+  ]
+
+  const capabilities = [
+    "Multi-store management with tenant isolation",
+    "Real-time inventory tracking and low-stock alerts",
+    "Customer loyalty and CRM integration",
+    "Flexible payment processing with multiple methods",
+    "Comprehensive reporting and data export (CSV/Excel)",
+    "JWT authentication with refresh token flow",
+    "Responsive design for desktop, tablet, and mobile",
+    "Change queue for conflict-free offline sync"
+  ]
+
   return (
     <main className="relative h-screen w-full overflow-hidden bg-background">
-      <CustomCursor />
       <GrainOverlay />
 
       <div
@@ -217,18 +272,15 @@ export default function Home() {
           isLoaded ? "opacity-100" : "opacity-0"
         }`}
       >
-        <button
-          onClick={() => scrollToSection(0)}
-          className="flex items-center gap-2 transition-transform hover:scale-105"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-foreground/15 backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-foreground/25">
-            <span className="font-sans text-xl font-bold text-foreground">A</span>
+        <div className="flex items-center gap-2">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-foreground/15 backdrop-blur-md">
+            <Store className="h-6 w-6 text-foreground" />
           </div>
-          <span className="font-sans text-xl font-semibold tracking-tight text-foreground">Acme</span>
-        </button>
+          <span className="font-sans text-xl font-semibold tracking-tight text-foreground">Cloud POS</span>
+        </div>
 
         <div className="hidden items-center gap-8 md:flex">
-          {["Home", "Work", "Services", "About", "Contact"].map((item, index) => (
+          {["Home", "Features", "Capabilities", "Tech Stack", "CTA", "Footer"].map((item, index) => (
             <button
               key={item}
               onClick={() => scrollToSection(index)}
@@ -246,9 +298,14 @@ export default function Home() {
           ))}
         </div>
 
-        <MagneticButton variant="secondary" onClick={() => scrollToSection(4)}>
-          Get Started
-        </MagneticButton>
+        <div className="flex items-center gap-3">
+          <MagneticButton variant="ghost" onClick={() => router.push('/login')}>
+            Sign In
+          </MagneticButton>
+          <MagneticButton variant="primary" onClick={() => router.push('/signup')}>
+            Get Started
+          </MagneticButton>
+        </div>
       </nav>
 
       <div
@@ -260,35 +317,55 @@ export default function Home() {
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {/* Hero Section */}
-        <section className="flex min-h-screen w-screen shrink-0 flex-col justify-end px-6 pb-16 pt-24 md:px-12 md:pb-24">
+        <section className="flex min-h-screen w-screen shrink-0 snap-start flex-col justify-end px-6 pb-16 pt-24 md:px-12 md:pb-24">
           <div className="max-w-3xl">
             <div className="mb-4 inline-block animate-in fade-in slide-in-from-bottom-4 rounded-full border border-foreground/20 bg-foreground/15 px-4 py-1.5 backdrop-blur-md duration-700">
-              <p className="font-mono text-xs text-foreground/90">WebGL Powered Design</p>
+              <p className="font-mono text-xs text-foreground/90">Enterprise Point of Sale Solution</p>
             </div>
+            
             <h1 className="mb-6 animate-in fade-in slide-in-from-bottom-8 font-sans text-6xl font-light leading-[1.1] tracking-tight text-foreground duration-1000 md:text-7xl lg:text-8xl">
               <span className="text-balance">
-                Creative experiences
+                Modern POS
                 <br />
-                in fluid motion
+                for Modern Business
               </span>
             </h1>
+            
             <p className="mb-8 max-w-xl animate-in fade-in slide-in-from-bottom-4 text-lg leading-relaxed text-foreground/90 duration-1000 delay-200 md:text-xl">
               <span className="text-pretty">
-                Transforming digital spaces with dynamic shader effects and real-time visual experiences that captivate
-                and inspire.
+                Enterprise-grade Point of Sale system with multi-tenant architecture, 
+                offline capabilities, and comprehensive business management tools.
               </span>
             </p>
+            
             <div className="flex animate-in fade-in slide-in-from-bottom-4 flex-col gap-4 duration-1000 delay-300 sm:flex-row sm:items-center">
-              <MagneticButton
-                size="lg"
-                variant="primary"
-                onClick={() => window.open("https://v0.app/templates/R3n0gnvYFbO", "_blank")}
-              >
-                Open in v0
+              <MagneticButton size="lg" variant="primary" onClick={() => router.push('/signup')}>
+                Start Free Trial
+                <ArrowRight className="ml-2 h-5 w-5" />
               </MagneticButton>
-              <MagneticButton size="lg" variant="secondary" onClick={() => scrollToSection(2)}>
-                View Demo
+              <MagneticButton size="lg" variant="secondary" onClick={() => router.push('/login')}>
+                Sign In
               </MagneticButton>
+            </div>
+
+            {/* Stats */}
+            <div className="mt-16 grid grid-cols-2 gap-6 md:grid-cols-4">
+              {[
+                { label: 'Tenants', value: '∞', icon: <Users className="h-5 w-5" /> },
+                { label: 'Stores', value: '∞', icon: <Store className="h-5 w-5" /> },
+                { label: 'Products', value: '∞', icon: <Package className="h-5 w-5" /> },
+                { label: 'Transactions', value: 'Real-time', icon: <TrendingUp className="h-5 w-5" /> }
+              ].map((stat, i) => (
+                <div
+                  key={i}
+                  className="animate-in fade-in slide-in-from-bottom-4 rounded-lg border border-foreground/10 bg-foreground/5 p-4 backdrop-blur-md duration-1000"
+                  style={{ animationDelay: `${400 + i * 100}ms` }}
+                >
+                  <div className="mb-2 text-foreground/70">{stat.icon}</div>
+                  <div className="mb-1 text-2xl font-light text-foreground">{stat.value}</div>
+                  <div className="font-mono text-xs text-foreground/70">{stat.label}</div>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -302,10 +379,186 @@ export default function Home() {
           </div>
         </section>
 
-        <WorkSection />
-        <ServicesSection />
-        <AboutSection scrollToSection={scrollToSection} />
-        <ContactSection />
+        {/* Features Section */}
+        <section className="flex h-screen w-screen shrink-0 snap-start items-center px-6 pt-20 md:px-12 md:pt-0 lg:px-16">
+          <div className="mx-auto w-full max-w-7xl">
+            <div className="mb-12">
+              <div className="mb-4 inline-block rounded-full border border-foreground/20 bg-foreground/15 px-4 py-1.5 backdrop-blur-md">
+                <p className="font-mono text-xs text-foreground/90">Core Features</p>
+              </div>
+              <h2 className="mb-6 font-sans text-4xl font-light tracking-tight text-foreground md:text-5xl">
+                Everything You Need
+                <br />
+                <span className="text-foreground/40">in One Platform</span>
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {features.map((feature, i) => (
+                <div
+                  key={i}
+                  className="group rounded-lg border border-foreground/10 bg-foreground/5 p-6 backdrop-blur-md transition-all hover:bg-foreground/10 hover:scale-105"
+                >
+                  <div className="mb-4 text-foreground/80">{feature.icon}</div>
+                  <h3 className="mb-2 text-xl font-semibold text-foreground">{feature.title}</h3>
+                  <p className="text-foreground/70">{feature.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Capabilities Section */}
+        <section className="flex h-screen w-screen shrink-0 snap-start items-center px-6 pt-20 md:px-12 md:pt-0 lg:px-16">
+          <div className="mx-auto w-full max-w-7xl">
+            <div className="grid gap-12 lg:grid-cols-2 lg:gap-24">
+              <div>
+                <div className="mb-4 inline-block rounded-full border border-foreground/20 bg-foreground/15 px-4 py-1.5 backdrop-blur-md">
+                  <p className="font-mono text-xs text-foreground/90">Platform Capabilities</p>
+                </div>
+                <h2 className="mb-6 font-sans text-4xl font-light tracking-tight text-foreground md:text-5xl">
+                  Production-Ready
+                  <br />
+                  Features
+                </h2>
+                <p className="mb-8 text-lg leading-relaxed text-foreground/80">
+                  Cloud POS is built to scale from single stores to enterprise chains, 
+                  with security, reliability, and performance at its core.
+                </p>
+                <MagneticButton size="lg" variant="primary" onClick={() => router.push('/signup')}>
+                  Start Building
+                  <TrendingUp className="ml-2 h-5 w-5" />
+                </MagneticButton>
+              </div>
+
+              <div className="space-y-4">
+                {capabilities.map((capability, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <CheckCircle2 className="h-6 w-6 flex-shrink-0 text-green-400" />
+                    <span className="text-lg text-foreground/90">{capability}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Tech Stack Section */}
+        <section className="flex h-screen w-screen shrink-0 snap-start items-center px-6 pt-20 md:px-12 md:pt-0 lg:px-16">
+          <div className="mx-auto w-full max-w-7xl">
+            <div className="mb-12 text-center">
+              <div className="mb-4 inline-block rounded-full border border-foreground/20 bg-foreground/15 px-4 py-1.5 backdrop-blur-md">
+                <p className="font-mono text-xs text-foreground/90">Technology Stack</p>
+              </div>
+              <h2 className="font-sans text-4xl font-light tracking-tight text-foreground md:text-5xl">
+                Built with Modern
+                <br />
+                <span className="text-foreground/40">Technologies</span>
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+              <div className="rounded-lg border border-foreground/10 bg-foreground/5 p-8 backdrop-blur-md">
+                <Zap className="mb-4 h-10 w-10 text-foreground/80" />
+                <h3 className="mb-3 text-2xl font-semibold text-foreground">Frontend</h3>
+                <ul className="space-y-2 text-foreground/70">
+                  <li>• Next.js 15 with App Router</li>
+                  <li>• React 19 + TypeScript</li>
+                  <li>• Tailwind CSS + Radix UI</li>
+                  <li>• React Hook Form + Zod</li>
+                </ul>
+              </div>
+
+              <div className="rounded-lg border border-foreground/10 bg-foreground/5 p-8 backdrop-blur-md">
+                <Shield className="mb-4 h-10 w-10 text-foreground/80" />
+                <h3 className="mb-3 text-2xl font-semibold text-foreground">Backend</h3>
+                <ul className="space-y-2 text-foreground/70">
+                  <li>• RESTful API with JWT</li>
+                  <li>• PostgreSQL Database</li>
+                  <li>• Multi-tenant Architecture</li>
+                  <li>• Offline SQLite Sync</li>
+                </ul>
+              </div>
+
+              <div className="rounded-lg border border-foreground/10 bg-foreground/5 p-8 backdrop-blur-md">
+                <Cloud className="mb-4 h-10 w-10 text-foreground/80" />
+                <h3 className="mb-3 text-2xl font-semibold text-foreground">Deployment</h3>
+                <ul className="space-y-2 text-foreground/70">
+                  <li>• Docker Containers</li>
+                  <li>• CI/CD Pipeline</li>
+                  <li>• Cloud-Native Design</li>
+                  <li>• Auto-scaling Ready</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="flex h-screen w-screen shrink-0 snap-start items-center px-6 pt-20 md:px-12 md:pt-0 lg:px-16">
+          <div className="mx-auto w-full max-w-4xl text-center">
+            <div className="mb-4 inline-block rounded-full border border-foreground/20 bg-foreground/15 px-4 py-1.5 backdrop-blur-md">
+              <p className="font-mono text-xs text-foreground/90">Get Started Today</p>
+            </div>
+
+            <h2 className="mb-6 font-sans text-5xl font-light leading-[1.1] tracking-tight text-foreground md:text-6xl lg:text-7xl">
+              Ready to Transform
+              <br />
+              Your Business?
+            </h2>
+
+            <p className="mb-10 text-xl leading-relaxed text-foreground/80">
+              Join thousands of businesses already using Cloud POS to streamline their operations.
+            </p>
+
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-center">
+              <MagneticButton size="lg" variant="primary" onClick={() => router.push('/signup')}>
+                Create Account
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </MagneticButton>
+              <MagneticButton size="lg" variant="secondary" onClick={() => router.push('/login')}>
+                Sign In
+              </MagneticButton>
+            </div>
+
+            <div className="mt-12 text-sm text-foreground/60">
+              No credit card required • Free 14-day trial • Cancel anytime
+            </div>
+          </div>
+        </section>
+
+        {/* Footer Section */}
+        <section className="flex h-screen w-screen shrink-0 snap-start items-center px-6 pt-20 md:px-12 md:pt-0 lg:px-16">
+          <div className="mx-auto w-full max-w-7xl">
+            <div className="border-t border-foreground/10 pt-12">
+              <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-foreground/15 backdrop-blur-md">
+                    <Store className="h-6 w-6 text-foreground" />
+                  </div>
+                  <span className="font-sans text-xl font-semibold tracking-tight text-foreground">Cloud POS</span>
+                </div>
+
+                <div className="flex gap-8 text-sm text-foreground/70">
+                  <a href="#" className="hover:text-foreground">Privacy</a>
+                  <a href="#" className="hover:text-foreground">Terms</a>
+                  <a href="#" className="hover:text-foreground">Contact</a>
+                  <a href="#" className="hover:text-foreground">Docs</a>
+                </div>
+
+                <p className="text-sm text-foreground/60">
+                  © 2025 Cloud POS. All rights reserved.
+                </p>
+              </div>
+
+              <div className="mt-12 text-center">
+                <p className="text-xs text-foreground/50">
+                  Enterprise Point of Sale Solution • Multi-tenant Architecture • Cloud & Offline Sync
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
 
       <style jsx global>{`
