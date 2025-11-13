@@ -11,6 +11,7 @@ interface ProtectedRouteProps {
   requireTenant?: boolean
   requireStore?: boolean
   redirectTo?: string
+  allowDevMode?: boolean // Allow staying on page with error message instead of redirecting
 }
 
 export function ProtectedRoute({
@@ -18,7 +19,8 @@ export function ProtectedRoute({
   requiredRole = [],
   requireTenant = false,
   requireStore = false,
-  redirectTo = '/login'
+  redirectTo = '/login',
+  allowDevMode = false
 }: ProtectedRouteProps) {
   const { user, tenantId, storeId, isSuperadmin, isLoading } = useAuth()
   const router = useRouter()
@@ -33,12 +35,20 @@ export function ProtectedRoute({
 
       // User not authenticated
       if (!user) {
-        logger.warn('Unauthenticated user attempting to access protected route', {
-          redirectTo,
-          currentPath: window.location.pathname
-        })
-        router.push(redirectTo)
-        return
+        if (allowDevMode) {
+          logger.warn('Unauthenticated user on protected route (dev mode)', {
+            currentPath: window.location.pathname
+          })
+          // Don't redirect in dev mode, let the component handle the error display
+          return
+        } else {
+          logger.warn('Unauthenticated user attempting to access protected route', {
+            redirectTo,
+            currentPath: window.location.pathname
+          })
+          router.push(redirectTo)
+          return
+        }
       }
 
       // Check tenant requirement
@@ -104,7 +114,8 @@ export function ProtectedRoute({
   }
 
   // Don't render children if user is not authenticated or doesn't have access
-  if (!user) {
+  // (unless in dev mode, where we allow error display)
+  if (!user && !allowDevMode) {
     return null
   }
 
@@ -118,8 +129,8 @@ export function ProtectedRoute({
     return null
   }
 
-  // Check role requirements (if not superadmin)
-  if (!isSuperadmin && requiredRole.length > 0) {
+  // Check role requirements (if not superadmin and user exists)
+  if (user && !isSuperadmin && requiredRole.length > 0) {
     const userRoles = user.roles || []
     const hasRequiredRole = requiredRole.some(role => userRoles.includes(role))
     if (!hasRequiredRole) {

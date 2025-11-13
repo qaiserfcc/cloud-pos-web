@@ -24,27 +24,45 @@ class ApiClient {
     // Request interceptor
     this.client.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
-        // Add auth token if available
+        console.log('🔍 API Request Interceptor triggered for:', config.url)
+
+        // Add Authorization header if token exists
         const token = this.getAccessToken()
-        if (token && config.headers) {
+        console.log('🔑 Retrieved token from localStorage:', token ? 'present' : 'null/undefined')
+
+        if (token) {
           config.headers.Authorization = `Bearer ${token}`
+          console.log('✅ Set Authorization header:', config.headers.Authorization)
+        } else {
+          console.log('❌ No token found, Authorization header not set')
         }
 
-        // Add tenant and store IDs if available
+        // Add tenant and store headers if set
         const tenantId = this.getTenantId()
         const storeId = this.getStoreId()
-        
-        if (tenantId && config.headers) {
+        if (tenantId) {
           config.headers['X-Tenant-ID'] = tenantId
+          console.log('🏢 Set X-Tenant-ID header:', tenantId)
         }
-        
-        if (storeId && config.headers) {
+        if (storeId) {
           config.headers['X-Store-ID'] = storeId
+          console.log('🏪 Set X-Store-ID header:', storeId)
         }
+
+        logger.debug('API Request', {
+          url: config.url,
+          method: config.method,
+          hasAuth: !!token,
+          tenantId,
+          storeId
+        })
 
         return config
       },
-      (error) => Promise.reject(error)
+      (error: any) => {
+        console.error('❌ Request interceptor error:', error)
+        return Promise.reject(error)
+      }
     )
 
     // Response interceptor
@@ -74,11 +92,12 @@ class ApiClient {
             }
             return this.client(originalRequest)
           } catch (refreshError) {
-            // Refresh failed, redirect to login
+            // Refresh failed - show error but don't redirect in development
             this.clearAuth()
-            if (typeof window !== 'undefined') {
-              window.location.href = '/login'
-            }
+            const errorMessage = 'Authentication expired. Please log in again.'
+            toastService.error(errorMessage, refreshError)
+            logger.error('Token refresh failed - authentication expired', { error: refreshError })
+            // Note: Removed automatic redirect to login for development phase
             return Promise.reject(refreshError)
           }
         }
@@ -107,7 +126,7 @@ class ApiClient {
           throw new Error('No refresh token available')
         }
 
-        const response = await axios.post(`${API_BASE_URL}/auth/refresh-token`, {
+        const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
           refreshToken,
         })
 
@@ -129,7 +148,13 @@ class ApiClient {
   // Token management
   private getAccessToken(): string | null {
     if (typeof window === 'undefined') return null
-    return localStorage.getItem('accessToken')
+    const token = localStorage.getItem('accessToken')
+    logger.debug('getAccessToken called', {
+      tokenExists: !!token,
+      tokenLength: token?.length,
+      tokenPrefix: token?.substring(0, 20)
+    })
+    return token
   }
 
   private setAccessToken(token: string): void {
@@ -140,7 +165,13 @@ class ApiClient {
 
   private getRefreshToken(): string | null {
     if (typeof window === 'undefined') return null
-    return localStorage.getItem('refreshToken')
+    const token = localStorage.getItem('refreshToken')
+    logger.debug('getRefreshToken called', {
+      tokenExists: !!token,
+      tokenLength: token?.length,
+      tokenPrefix: token?.substring(0, 20)
+    })
+    return token
   }
 
   private setRefreshToken(token: string): void {
@@ -160,6 +191,12 @@ class ApiClient {
   }
 
   public setAuth(accessToken: string, refreshToken: string): void {
+    logger.debug('Setting auth tokens', {
+      hasAccessToken: !!accessToken,
+      hasRefreshToken: !!refreshToken,
+      accessTokenLength: accessToken?.length,
+      refreshTokenLength: refreshToken?.length
+    })
     this.setAccessToken(accessToken)
     this.setRefreshToken(refreshToken)
   }

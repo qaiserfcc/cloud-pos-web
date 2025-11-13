@@ -69,6 +69,42 @@ export default function DashboardPage() {
     )
   }
 
+  // Show authentication error in dev mode when user is not authenticated
+  if (!user) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="max-w-md rounded-lg border border-red-500/20 bg-red-500/5 p-6 text-center">
+          <div className="mb-4 flex justify-center">
+            <div className="h-12 w-12 rounded-full bg-red-500/20 flex items-center justify-center">
+              <span className="text-lg text-red-500">!</span>
+            </div>
+          </div>
+          <h2 className="mb-2 text-xl font-semibold text-red-700 dark:text-red-400">
+            Authentication Required
+          </h2>
+          <p className="mb-4 text-sm text-red-600 dark:text-red-500">
+            You need to log in to access the dashboard. Your session may have expired.
+          </p>
+          <div className="flex gap-3">
+            <MagneticButton
+              onClick={() => router.push('/login')}
+              className="flex-1"
+            >
+              Go to Login
+            </MagneticButton>
+            <MagneticButton
+              variant="secondary"
+              onClick={() => window.location.reload()}
+              className="flex-1"
+            >
+              Refresh Page
+            </MagneticButton>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // Tenant/Store Selection Component
   const TenantStoreSelector = () => {
     if (!isSuperadmin && !selectedTenantId) {
@@ -94,6 +130,7 @@ export default function DashboardPage() {
               value={selectedTenantId || ''}
               onChange={(e) => selectTenant(e.target.value)}
               className="rounded-lg border border-foreground/20 bg-foreground/5 px-3 py-2 text-sm focus:border-foreground/40 focus:outline-none"
+              title="Select Tenant"
             >
               <option value="">Select Tenant</option>
               {tenants.map((tenant) => (
@@ -112,6 +149,7 @@ export default function DashboardPage() {
               value={selectedStoreId || ''}
               onChange={(e) => selectStore(e.target.value || null)}
               className="rounded-lg border border-foreground/20 bg-foreground/5 px-3 py-2 text-sm focus:border-foreground/40 focus:outline-none"
+              title="Select Store"
             >
               <option value="">All Stores</option>
               {stores.map((store) => (
@@ -185,7 +223,7 @@ export default function DashboardPage() {
   ]
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute allowDevMode={true}>
       <div className="flex h-screen overflow-hidden bg-background">
         {/* Sidebar */}
         <aside className={`fixed inset-y-0 left-0 z-50 w-64 transform border-r border-foreground/10 bg-foreground/5 backdrop-blur-md transition-transform duration-300 lg:relative lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>

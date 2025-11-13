@@ -7,24 +7,75 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Store, Mail, Lock, User, Phone, Building2, AlertCircle, Loader2 } from "lucide-react"
 import { authService } from "@/services/auth.service"
+import { roleService } from '@/services/role.service'
 import Link from "next/link"
+
+interface RoleRecord { id: string; name: string }
+
+interface SignupFormState {
+  email: string
+  password: string
+  confirmPassword: string
+  firstName: string
+  lastName: string
+  phone: string
+  tenantId: string
+  roleId: string // stores the selected role id
+}
 
 export default function SignupPage() {
   const router = useRouter()
   const [isLoaded, setIsLoaded] = useState(false)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<SignupFormState>({
     email: "",
     password: "",
     confirmPassword: "",
     firstName: "",
     lastName: "",
     phone: "",
-    tenantName: ""
+    tenantId: "",
+    roleId: ""
   })
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [roles, setRoles] = useState<RoleRecord[]>([])
+  const [rolesLoading, setRolesLoading] = useState(true)
+  const [rolesError, setRolesError] = useState<string | null>(null)
+
+  const roleDescriptions: Record<string, string> = {
+    'Super Admin': 'Global access without tenant association',
+    'Tenant Admin': 'Manage a specific tenant and stores'
+  }
 
   useEffect(() => {
+    // Fetch available roles from backend and filter to the two allowed display roles
+    let mounted = true
+    ;(async () => {
+      try {
+        const fetched = await roleService.getRoles()
+        // Keep only roles with display names we care about
+        const allowed = fetched.filter(r => ['Super Admin', 'Tenant Admin'].includes(r.name))
+        if (mounted) {
+          if (allowed.length > 0) setRoles(allowed)
+          else setRoles([
+            { id: 'superadmin', name: 'Super Admin' },
+            { id: 'tenantadmin', name: 'Tenant Admin' }
+          ])
+        }
+      } catch (err: any) {
+        console.error('Failed to fetch roles, falling back to defaults', err)
+        if (mounted) {
+          setRoles([
+            { id: 'superadmin', name: 'Super Admin' },
+            { id: 'tenantadmin', name: 'Tenant Admin' }
+          ])
+          setRolesError(err?.message || 'Failed to load roles')
+        }
+      } finally {
+        if (mounted) setRolesLoading(false)
+      }
+    })()
+
     // Check if already authenticated
     if (authService.isAuthenticated()) {
       router.push('/dashboard')
@@ -32,7 +83,10 @@ export default function SignupPage() {
     }
 
     const timer = setTimeout(() => setIsLoaded(true), 100)
-    return () => clearTimeout(timer)
+    return () => {
+      mounted = false
+      clearTimeout(timer)
+    }
   }, [router])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,6 +94,16 @@ export default function SignupPage() {
       ...formData,
       [e.target.name]: e.target.value
     })
+  }
+
+  const handleRoleChange = (roleId: string) => {
+    const roleObj = roles.find(r => r.id === roleId)
+    const roleName = roleObj?.name ?? ''
+    setFormData(prev => ({
+      ...prev,
+      roleId,
+      tenantId: roleName === 'Super Admin' ? '' : prev.tenantId
+    }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,14 +119,28 @@ export default function SignupPage() {
         return
       }
 
+      const isRoleValid = roles.some(r => r.id === formData.roleId)
+      if (!formData.roleId || !isRoleValid) {
+        setError("Please select a valid role")
+        setIsLoading(false)
+        return
+      }
+      const selectedRole = roles.find(r => r.id === formData.roleId)
+      if (selectedRole?.name === "Tenant Admin" && !formData.tenantId.trim()) {
+        setError("Tenant ID is required for tenant administrators")
+        setIsLoading(false)
+        return
+      }
+
       if (formData.password !== formData.confirmPassword) {
         setError("Passwords do not match")
         setIsLoading(false)
         return
       }
 
-      if (formData.password.length < 8) {
-        setError("Password must be at least 8 characters long")
+      const passwordPolicy = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
+      if (!passwordPolicy.test(formData.password)) {
+        setError("Password must be at least 8 characters long and include uppercase, lowercase, and a number")
         setIsLoading(false)
         return
       }
@@ -73,8 +151,8 @@ export default function SignupPage() {
         password: formData.password,
         firstName: formData.firstName,
         lastName: formData.lastName,
-        phone: formData.phone || undefined,
-        tenantName: formData.tenantName || undefined
+        roleId: formData.roleId || undefined,
+        tenantId: selectedRole?.name === "Tenant Admin" ? formData.tenantId : undefined
       })
 
       // Redirect to dashboard
@@ -85,6 +163,8 @@ export default function SignupPage() {
       setIsLoading(false)
     }
   }
+
+  const selectedRole = roles.find(r => r.id === formData.roleId)
 
   return (
     <main className="relative min-h-screen w-full overflow-auto bg-background">
@@ -154,6 +234,61 @@ export default function SignupPage() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Role Selection */}
+              <div>
+                <span className="mb-2 block text-sm font-medium text-foreground/80">Select Role *</span>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {rolesLoading ? (
+                    <div className="col-span-2 flex items-center justify-center py-4">
+                      <Loader2 className="h-5 w-5 animate-spin text-foreground/70" />
+                    </div>
+                  ) : (
+                    roles.map(role => {
+                      const isActive = formData.roleId === role.id
+                      return (
+                        <label
+                          key={role.id}
+                          className={`block cursor-pointer rounded-lg border p-4 transition-colors ${
+                            isActive
+                              ? "border-foreground bg-foreground/10"
+                              : "border-foreground/20 bg-foreground/5 hover:border-foreground/40"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="role"
+                            value={role.id}
+                            checked={isActive}
+                            onChange={() => handleRoleChange(role.id)}
+                            className="sr-only"
+                            aria-label={role.name}
+                          />
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-semibold text-foreground">{role.name}</p>
+                              <p className="mt-1 text-xs text-foreground/60">{roleDescriptions[role.name]}</p>
+                            </div>
+                            <span
+                              aria-hidden="true"
+                              className={`flex h-4 w-4 items-center justify-center rounded-full border ${
+                                isActive
+                                  ? "border-foreground bg-foreground"
+                                  : "border-foreground/30"
+                              }`}
+                            >
+                              {isActive && <span className="block h-2 w-2 rounded-full bg-background" />}
+                            </span>
+                          </div>
+                        </label>
+                      )
+                    })
+                  )}
+                </div>
+                {rolesError && (
+                  <p className="mt-2 text-xs text-yellow-400">Failed to load roles: {rolesError}</p>
+                )}
+              </div>
+
               {/* Name Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -237,24 +372,27 @@ export default function SignupPage() {
               </div>
 
               {/* Tenant Name Field */}
-              <div>
-                <label htmlFor="tenantName" className="mb-2 block text-sm font-medium text-foreground/80">
-                  Company/Tenant Name
-                </label>
-                <div className="relative">
-                  <Building2 className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-foreground/50" />
-                  <input
-                    id="tenantName"
-                    name="tenantName"
-                    type="text"
-                    value={formData.tenantName}
-                    onChange={handleChange}
-                    placeholder="My Business"
-                    disabled={isLoading}
-                    className="w-full rounded-lg border border-foreground/20 bg-foreground/5 py-3 pl-10 pr-4 text-foreground placeholder-foreground/50 backdrop-blur-sm transition-colors focus:border-foreground/40 focus:outline-none disabled:opacity-50"
-                  />
+              {selectedRole?.name === "Tenant Admin" && (
+                <div>
+                  <label htmlFor="tenantId" className="mb-2 block text-sm font-medium text-foreground/80">
+                    Tenant ID *
+                  </label>
+                  <div className="relative">
+                    <Building2 className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-foreground/50" />
+                    <input
+                      id="tenantId"
+                      name="tenantId"
+                      type="text"
+                      value={formData.tenantId}
+                      onChange={handleChange}
+                      placeholder="00000000-0000-0000-0000-000000000000"
+                      disabled={isLoading}
+                      className="w-full rounded-lg border border-foreground/20 bg-foreground/5 py-3 pl-10 pr-4 text-foreground placeholder-foreground/50 backdrop-blur-sm transition-colors focus:border-foreground/40 focus:outline-none disabled:opacity-50"
+                      required={selectedRole?.name === "Tenant Admin"}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Password Fields */}
               <div>

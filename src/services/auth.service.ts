@@ -13,51 +13,47 @@ export const authService = {
    * Login user
    */
   async login(credentials: LoginRequest): Promise<LoginResponse> {
-    logger.apiCall('POST', '/auth/login')
-    const startTime = Date.now()
-    
     try {
-      const response = await apiClient.post<ApiResponse<LoginResponse>>(
-        '/auth/login',
-        credentials
-      )
-      
-      const duration = Date.now() - startTime
-      
-      if (response.success && response.data) {
-        logger.apiCall('POST', '/auth/login', 200, duration)
-        logger.authEvent('Login successful', { 
-          email: credentials.email, 
-          duration,
-          userId: response.data.user.id 
-        })
-        
-        // Store tokens and user data
-        apiClient.setAuth(response.data.accessToken, response.data.refreshToken)
-        apiClient.setTenantId(response.data.user.tenantId)
-        
-        if (response.data.user.defaultStoreId) {
-          apiClient.setStoreId(response.data.user.defaultStoreId)
-        }
-        
-        // Store user in localStorage
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('user', JSON.stringify(response.data.user))
-        }
-        
-        return response.data
-      }
-      
-      logger.apiCall('POST', '/auth/login', 400, duration, response.error)
-      throw new Error(response.error || 'Login failed')
-    } catch (error: any) {
-      const duration = Date.now() - startTime
-      logger.apiCall('POST', '/auth/login', 500, duration, error)
-      logger.error('Login API error', { 
-        email: credentials.email, 
-        error: error.message,
-        duration 
+      console.log('🔐 Starting login process for:', credentials.email)
+
+      const response = await apiClient.post<{
+        success: boolean
+        data: LoginResponse
+        error?: string
+      }>('/auth/login', credentials)
+
+      console.log('📡 Login API response received:', {
+        success: response.success,
+        hasData: !!response.data,
+        hasError: !!response.error
       })
+
+      if (!response.success || !response.data) {
+        console.error('❌ Login failed:', response.error)
+        throw new Error(response.error || 'Login failed')
+      }
+
+      const loginData = response.data
+      console.log('✅ Login successful, storing tokens...')
+
+      // Store tokens using apiClient
+      apiClient.setAuth(loginData.accessToken, loginData.refreshToken)
+      console.log('💾 Tokens stored via apiClient.setAuth()')
+
+      // Verify tokens were stored
+      const storedAccessToken = localStorage.getItem('accessToken')
+      const storedRefreshToken = localStorage.getItem('refreshToken')
+      console.log('🔍 Verification - tokens in localStorage:', {
+        accessToken: storedAccessToken ? 'present' : 'missing',
+        refreshToken: storedRefreshToken ? 'present' : 'missing'
+      })
+
+      logger.authEvent('Login successful', { email: credentials.email, userId: loginData.user.id })
+
+      return loginData
+    } catch (error: any) {
+      console.error('❌ Login error:', error.message)
+      logger.error('Login failed', { email: credentials.email, error: error.message })
       throw error
     }
   },
@@ -81,9 +77,10 @@ export const authService = {
         logger.apiCall('POST', '/auth/register', 201, duration)
         logger.authEvent('Registration successful', { 
           email: data.email, 
-          tenantName: data.tenantName,
+          tenantId: data.tenantId,
+          roleId: data.roleId,
           duration,
-          userId: response.data.user.id 
+    userId: response.data.user.id 
         })
         
         // Store tokens and user data
@@ -109,6 +106,7 @@ export const authService = {
       logger.apiCall('POST', '/auth/register', 500, duration, error)
       logger.error('Registration API error', { 
         email: data.email, 
+        roleId: data.roleId,
         error: error.message,
         duration 
       })
@@ -185,12 +183,12 @@ export const authService = {
       throw new Error('No refresh token available')
     }
 
-    logger.apiCall('POST', '/auth/refresh-token')
+    logger.apiCall('POST', '/auth/refresh')
     const startTime = Date.now()
     
     try {
       const response = await apiClient.post<ApiResponse<{ accessToken: string; refreshToken?: string }>>(
-        '/auth/refresh-token',
+        '/auth/refresh',
         { refreshToken }
       )
       

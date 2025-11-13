@@ -18,8 +18,8 @@ export interface RegisterRequest {
   password: string
   firstName: string
   lastName: string
-  phone?: string
-  tenantName?: string
+  tenantId?: string
+  roleId?: string
 }
 
 export interface LoginResponse {

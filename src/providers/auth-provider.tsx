@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { authService } from '@/services/auth.service'
 import { apiClient } from '@/lib/api-client'
+import { tenantService } from '@/services/tenant.service'
 import { logger } from '@/utils/logger'
 import { toastService } from '@/providers/toast-provider'
 import type { User, Tenant, Store } from '@/types/api'
@@ -55,7 +56,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         logger.error('Auth initialization failed', { error })
-        toastService.error('Failed to initialize authentication', error)
+        toastService.error('Failed to load user session. You may need to log in again.', error)
+        // Clear auth state but don't redirect - stay on current page for development
+        setUser(null)
+        setTenant(null)
+        setStore(null)
+        setIsSuperadmin(false)
+        apiClient.clearAuth()
       } finally {
         setIsLoading(false)
       }
@@ -66,51 +73,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = async (): Promise<void> => {
     try {
-      logger.apiCall('GET', '/dashboard')
+      logger.apiCall('GET', '/auth/me')
       const startTime = Date.now()
 
-      const response = await apiClient.get<{
+      // First get user profile
+      const profileResponse = await apiClient.get<{
         success: boolean
-        data: {
-          user: User
-          tenant: Tenant
-          store: Store | null
-          isSuperadmin: boolean
-        }
+        data: User
         error?: string
-      }>('/dashboard')
+      }>('/auth/me')
 
-      const duration = Date.now() - startTime
-
-      if (response.success && response.data) {
-        logger.apiCall('GET', '/dashboard', 200, duration)
-
-        const { user: userData, tenant: tenantData, store: storeData, isSuperadmin: superadminStatus } = response.data
-
-        setUser(userData)
-        setTenant(tenantData)
-        setStore(storeData)
-        setIsSuperadmin(superadminStatus)
-
-        // Update API client with tenant/store context
-        apiClient.setTenantId(userData.tenantId)
-        if (userData.defaultStoreId) {
-          apiClient.setStoreId(userData.defaultStoreId)
-        }
-
-        logger.authEvent('User context refreshed', {
-          userId: userData.id,
-          tenantId: userData.tenantId,
-          storeId: userData.defaultStoreId,
-          isSuperadmin: superadminStatus,
-          duration
-        })
-
-        return
+      if (!profileResponse.success || !profileResponse.data) {
+        logger.apiCall('GET', '/auth/me', 400, Date.now() - startTime, profileResponse.error)
+        throw new Error(profileResponse.error || 'Failed to fetch user profile')
       }
 
-      logger.apiCall('GET', '/dashboard', 400, duration, response.error)
-      throw new Error(response.error || 'Failed to fetch user context')
+      const userData = profileResponse.data
+      const isSuperadmin = userData.roles?.includes('superadmin') || false
+
+      logger.apiCall('GET', '/auth/profile', 200, Date.now() - startTime)
+
+      // Get tenant data
+      let tenantData: Tenant | null = null
+      try {
+        tenantData = await tenantService.getTenant(userData.tenantId)
+      } catch (error) {
+        logger.warn('Failed to fetch tenant data', { tenantId: userData.tenantId, error })
+        // Continue without tenant data for now
+      }
+
+      // Get store data if user has a default store
+      let storeData: Store | null = null
+      if (userData.defaultStoreId) {
+        try {
+          storeData = await tenantService.getStore(userData.defaultStoreId)
+        } catch (error) {
+          logger.warn('Failed to fetch store data', { storeId: userData.defaultStoreId, error })
+          // Continue without store data for now
+        }
+      }
+
+      // Update state
+      setUser(userData)
+      setTenant(tenantData)
+      setStore(storeData)
+      setIsSuperadmin(isSuperadmin)
+
+      // Update API client with tenant/store context
+      apiClient.setTenantId(userData.tenantId)
+      if (userData.defaultStoreId) {
+        apiClient.setStoreId(userData.defaultStoreId)
+      }
+
+      const totalDuration = Date.now() - startTime
+      logger.authEvent('User context refreshed', {
+        userId: userData.id,
+        tenantId: userData.tenantId,
+        storeId: userData.defaultStoreId,
+        isSuperadmin,
+        hasTenantData: !!tenantData,
+        hasStoreData: !!storeData,
+        duration: totalDuration
+      })
+
     } catch (error: any) {
       logger.error('Failed to refresh user context', { error: error.message })
       throw error

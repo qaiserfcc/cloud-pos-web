@@ -9,6 +9,8 @@ interface MagneticButtonProps {
   variant?: "primary" | "secondary" | "ghost"
   size?: "default" | "lg"
   onClick?: () => void
+  type?: "button" | "submit" | "reset"
+  disabled?: boolean
 }
 
 export function MagneticButton({
@@ -17,10 +19,12 @@ export function MagneticButton({
   variant = "primary",
   size = "default",
   onClick,
+  type = "button",
+  disabled = false,
 }: MagneticButtonProps) {
   const ref = useRef<HTMLButtonElement>(null)
   const positionRef = useRef({ x: 0, y: 0 })
-  const rafRef = useRef<number>()
+  const rafRef = useRef<number | null>(null)
 
   const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!ref.current) return
@@ -68,17 +72,17 @@ export function MagneticButton({
       onClick={onClick}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
+      type={type}
+      disabled={disabled}
       className={`
         relative overflow-hidden rounded-full font-medium
         transition-all duration-300 ease-out will-change-transform
+        disabled:cursor-not-allowed disabled:opacity-60
         ${variants[variant]}
         ${sizes[size]}
         ${className}
       `}
-      style={{
-        transform: "translate3d(0px, 0px, 0)",
-        contain: "layout style paint",
-      }}
+      data-variant={variant}
     >
       <span className="relative z-10">{children}</span>
     </button>

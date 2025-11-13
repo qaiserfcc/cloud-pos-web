@@ -22,6 +22,27 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({})
+  const [debugInfo, setDebugInfo] = useState<any>({})
+
+  useEffect(() => {
+    logger.info("Login page loaded", { url: window.location.href })
+    updateDebugInfo()
+  }, [])
+
+  const updateDebugInfo = () => {
+    if (typeof window === 'undefined') return
+
+    setDebugInfo({
+      localStorage: {
+        accessToken: localStorage.getItem('accessToken') ? 'present' : 'null',
+        refreshToken: localStorage.getItem('refreshToken') ? 'present' : 'null',
+        tenantId: localStorage.getItem('tenantId') || 'null',
+        storeId: localStorage.getItem('storeId') || 'null',
+        user: localStorage.getItem('user') ? 'present' : 'null'
+      },
+      timestamp: new Date().toISOString()
+    })
+  }
 
   useEffect(() => {
     logger.info("Login page loaded", { url: window.location.href })
@@ -80,6 +101,9 @@ export default function LoginPage() {
 
       logger.authEvent("Login successful", { email })
 
+      // Update debug info after successful login
+      setTimeout(updateDebugInfo, 100)
+
     } catch (error: any) {
       logger.error("Login failed", { email, error: error.message })
 
@@ -87,6 +111,9 @@ export default function LoginPage() {
 
       setErrors({ general: errorMessage })
       toastService.error("Login Failed", error)
+
+      // Update debug info after failed login
+      setTimeout(updateDebugInfo, 100)
     } finally {
       setIsSubmitting(false)
     }
@@ -191,6 +218,25 @@ export default function LoginPage() {
             <div className="mb-6 text-center">
               <h1 className="mb-2 text-3xl font-light tracking-tight text-foreground">Welcome Back</h1>
               <p className="text-foreground/70">Sign in to your account to continue</p>
+            </div>
+
+            {/* Debug Panel */}
+            <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-xs dark:border-yellow-800 dark:bg-yellow-900/20">
+              <h3 className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">🔍 Debug Info</h3>
+              <div className="space-y-1 text-yellow-700 dark:text-yellow-300">
+                <div>Access Token: {debugInfo.localStorage?.accessToken}</div>
+                <div>Refresh Token: {debugInfo.localStorage?.refreshToken}</div>
+                <div>Tenant ID: {debugInfo.localStorage?.tenantId}</div>
+                <div>Store ID: {debugInfo.localStorage?.storeId}</div>
+                <div>User: {debugInfo.localStorage?.user}</div>
+                <div>Last Updated: {debugInfo.timestamp}</div>
+              </div>
+              <button
+                onClick={updateDebugInfo}
+                className="mt-2 text-xs text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-200 underline"
+              >
+                Refresh Debug Info
+              </button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
