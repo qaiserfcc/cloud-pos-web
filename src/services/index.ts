@@ -1,5 +1,0 @@
-export { default as auth } from './auth'
-export { default as approvals } from './approvals'
-export { default as bulkTransfers } from './bulkTransfers'
-export { default as inventoryRegions } from './inventoryRegions'
-export { default as sales } from './sales'
